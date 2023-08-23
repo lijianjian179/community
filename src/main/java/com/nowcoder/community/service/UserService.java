@@ -111,7 +111,7 @@ public class UserService implements CommunityConstant {
         }
     }
 
-    public Map<String, Object> login(String username, String password, int expiredSeconds) {
+    public Map<String, Object> login(String username, String password, long expiredSeconds) {
         Map<String, Object> map = new HashMap<>();
 
         // 空值处理
@@ -158,5 +158,9 @@ public class UserService implements CommunityConstant {
 
     public void logout(String ticket) {
         loginTicketMapper.updateStatus(ticket, 1);
+    }
+
+    public LoginTicket findLoginTicket(String ticket) {
+        return loginTicketMapper.selectByTicket(ticket);
     }
 }

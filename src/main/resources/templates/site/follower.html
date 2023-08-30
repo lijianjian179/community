@@ -89,7 +89,9 @@
 									<i th:text="${follower.followedTime}">2019-04-28 14:13:25</i></span>
 							</h6>
 							<div>
-								<button type="button" class="btn btn-info btn-sm float-right follow-btn">关注TA</button>
+								<input type="hidden" id="entityId" th:value="${follower.user.id}">
+								<button type="button" th:class="|btn ${follower.hasFollowed?'btn-secondary':'btn-info'} btn-sm float-right follow-btn|"
+								th:text="${follower.hasFollowed?'已关注':'关注TA'}" th:if="${loginUser!=null && loginUser.id!=follower.user.id}">关注TA</button>
 							</div>
 						</div>
 					</li>

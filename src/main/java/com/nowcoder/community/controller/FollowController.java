@@ -61,9 +61,14 @@ public class FollowController implements CommunityConstant {
         page.setLimit(5);
         page.setPath("/followee/" + userId);
         page.setRows((int) followService.findFolloweeCount(userId, ENTITY_TYPE_USER));
+        // 当前登录用户
+        User loginUser = hostHolder.getUser();
+        model.addAttribute("loginUser", loginUser);
 
         List<Map<Integer, Double>> followList = followService.findFolloweeList(userId, ENTITY_TYPE_USER, page.getOffset(), page.getLimit());
         List<Map<String, Object>> followVoList = new ArrayList<>();
+        // 是否已关注
+        boolean hasFollowed = true;
         if (followList != null) {
             for (Map<Integer, Double> map : followList) {
                 Map<String, Object> voMap = new HashMap<>();
@@ -72,6 +77,10 @@ public class FollowController implements CommunityConstant {
                     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                     String followTime = dateFormat.format(map.get(key));
                     voMap.put("followTime", followTime);
+                    if (loginUser != null) {
+                        hasFollowed = followService.hasFollowed(userId, ENTITY_TYPE_USER, key);
+                        voMap.put("hasFollowed", hasFollowed);
+                    }
                 }
                 followVoList.add(voMap);
             }
@@ -95,8 +104,14 @@ public class FollowController implements CommunityConstant {
         page.setPath("/follower/" + userId);
         page.setRows((int) followService.findFollowerCount(userId, ENTITY_TYPE_USER));
 
+        // 当前登录用户
+        User loginUser = hostHolder.getUser();
+        model.addAttribute("loginUser", loginUser);
+
         List<Map<Integer, Double>> followerList = followService.findFollowerList(userId, ENTITY_TYPE_USER, page.getOffset(), page.getLimit());
         List<Map<String, Object>> followerVoList = new ArrayList<>();
+        // 是否已关注
+        boolean hasFollowed = false;
         if (followerList != null) {
             for (Map<Integer, Double> map : followerList) {
                 Map<String, Object> voMap = new HashMap<>();
@@ -105,6 +120,10 @@ public class FollowController implements CommunityConstant {
                     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                     String followTime = dateFormat.format(map.get(key));
                     voMap.put("followedTime", followTime);
+                    if (loginUser != null) {
+                        hasFollowed = followService.hasFollowed(userId, ENTITY_TYPE_USER, key);
+                        voMap.put("hasFollowed", hasFollowed);
+                    }
                 }
                 followerVoList.add(voMap);
             }

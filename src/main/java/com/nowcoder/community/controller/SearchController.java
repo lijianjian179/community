@@ -34,19 +34,21 @@ public class SearchController implements CommunityConstant {
     public String search(String keyword, Page page, Model model) {
         // 搜索帖子
         Map<String, Object> resultMap = elasticsearchService.searchDiscussPost(keyword, page.getCurrent() - 1, page.getLimit());
-        List<DiscussPost> postList = (List<DiscussPost>) resultMap.get("list");
         // 聚合数据
         List<Map<String, Object>> posts = new ArrayList<>();
-        if (postList != null) {
-            for (DiscussPost post : postList) {
-                Map<String, Object> map = new HashMap<>();
-                // 帖子
-                map.put("post", post);
-                // 作者
-                map.put("user", userService.findUserById(post.getUserId()));
-                // 点赞数量
-                map.put("likeCount", likeService.findEntityLikeCount(ENTITY_TYPE_POST, post.getId()));
-                posts.add(map);
+        if (resultMap != null) {
+            List<DiscussPost> postList = (List<DiscussPost>) resultMap.get("list");
+            if (postList != null) {
+                for (DiscussPost post : postList) {
+                    Map<String, Object> map = new HashMap<>();
+                    // 帖子
+                    map.put("post", post);
+                    // 作者
+                    map.put("user", userService.findUserById(post.getUserId()));
+                    // 点赞数量
+                    map.put("likeCount", likeService.findEntityLikeCount(ENTITY_TYPE_POST, post.getId()));
+                    posts.add(map);
+                }
             }
         }
 
@@ -55,7 +57,7 @@ public class SearchController implements CommunityConstant {
 
         // 分页信息
         page.setPath("/search?keyword=" + keyword);
-        page.setRows(postList == null ? 0 : (int) (long) resultMap.get("totalHits"));
+        page.setRows(resultMap == null ? 0 : (int) (long) resultMap.get("totalHits"));
 
         return "/site/search";
     }

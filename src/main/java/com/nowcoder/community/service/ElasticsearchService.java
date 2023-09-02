@@ -1,6 +1,9 @@
 package com.nowcoder.community.service;
 
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.nowcoder.community.dao.elasticsearch.DiscussPostRepository;
 import com.nowcoder.community.entity.DiscussPost;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,12 +14,14 @@ import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.query.Query;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class ElasticsearchService {
@@ -50,21 +55,50 @@ public class ElasticsearchService {
             return null;
         }
 
+        // 获取搜索关键词的分词集合
+        Set<String> words = getAnalyzeWords(keyword);
+
         List<DiscussPost> list = new ArrayList<>();
         for (SearchHit hit : searchHits) {
             DiscussPost post = (DiscussPost) hit.getContent();
 
             // 处理高亮显示
-            post.setTitle(highlight(post.getTitle(), keyword));
-            post.setContent(highlight(post.getContent(), keyword));
+            for (String word : words) {
+                post.setTitle(highlight(post.getTitle(), word));
+                post.setContent(highlight(post.getContent(), word));
+            }
             list.add(post);
         }
+
         // 封装帖子以及查询所得总数量
         Map<String, Object> result = new HashMap<>();
         result.put("list", list);
         result.put("totalHits", searchHits.getTotalHits());
 
         return result;
+    }
+
+    // 获取查询关键字的分词集合
+    public Set<String> getAnalyzeWords(String keyword) {
+        Set<String> words = new HashSet<>();
+        RestTemplate restTemplate = new RestTemplate();
+        String url = "http://localhost:9200/_analyze?pretty=true";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        Map<String, String> map = new HashMap<>();
+        map.put("analyzer", "ik_smart");
+        map.put("text", keyword);
+        HttpEntity<String> httpEntity = new HttpEntity<>(JSON.toJSONString(map), headers);
+        ResponseEntity<String> result = restTemplate.postForEntity(url, httpEntity, String.class);
+        JSONObject jsonObject = JSONObject.parseObject(result.getBody());
+        JSONArray tokens = jsonObject.getJSONArray("tokens");
+        if (!tokens.isEmpty() && tokens.size() > 0) {
+            for (int i = 0; i < tokens.size(); i++) {
+                JSONObject word = tokens.getJSONObject(i);
+                words.add(word.getString("token"));
+            }
+        }
+        return words;
     }
 
     /**

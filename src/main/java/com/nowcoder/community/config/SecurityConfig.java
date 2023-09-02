@@ -48,7 +48,16 @@ public class SecurityConfig implements CommunityConstant {
                                 "/follow",
                                 "/unfollow"
                         )
-                        .hasAnyAuthority(AUTHORITY_USER, AUTHORITY_ADMIN, AUTHORITY_MODERATOR)
+                        .hasAnyAuthority(AUTHORITY_USER,
+                                AUTHORITY_ADMIN,
+                                AUTHORITY_MODERATOR)
+                        .requestMatchers("/discuss/top",
+                                "/discuss/wonderful")
+                        .hasAuthority(
+                                AUTHORITY_MODERATOR)
+                        .requestMatchers("/discuss/delete")
+                        .hasAuthority(
+                                AUTHORITY_ADMIN)
                         .anyRequest().permitAll();
             } catch (Exception e) {
                 throw new RuntimeException(e);

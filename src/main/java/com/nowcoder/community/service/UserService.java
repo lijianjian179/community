@@ -173,6 +173,19 @@ public class UserService implements CommunityConstant {
         return map;
     }
 
+    public Map<String, Object> forgetPassword(String email, String verifyCode, String newPassword) {
+        Map<String, Object> map = new HashMap<>();
+
+        // 验证邮箱
+        User user = userMapper.selectByEmail(email);
+        if (user == null) {
+            map.put("emailMsg", "该邮箱不存在！");
+            return map;
+        }
+
+
+        return map;
+    }
     public void logout(String ticket) {
 //        loginTicketMapper.updateStatus(ticket, 1);
         String redisKey = RedisKeyUtil.getTicketKey(ticket);

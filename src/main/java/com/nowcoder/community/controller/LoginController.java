@@ -5,6 +5,7 @@ import com.nowcoder.community.entity.User;
 import com.nowcoder.community.service.UserService;
 import com.nowcoder.community.util.CommunityConstant;
 import com.nowcoder.community.util.CommunityUtil;
+import com.nowcoder.community.util.MailClient;
 import com.nowcoder.community.util.RedisKeyUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,10 +22,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.CookieValue;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.*;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -48,6 +48,12 @@ public class LoginController implements CommunityConstant {
     private RedisTemplate redisTemplate;
 
     @Autowired
+    private TemplateEngine templateEngine;
+
+    @Autowired
+    private MailClient mailClient;
+
+    @Autowired
     private SecurityContextLogoutHandler securityContextLogoutHandler;
 
     @Value("${server.servlet.context-path}")
@@ -61,6 +67,11 @@ public class LoginController implements CommunityConstant {
     @RequestMapping(path = "/login", method = RequestMethod.GET)
     public String getLoginPage() {
         return "/site/login";
+    }
+
+    @RequestMapping(path = "/forget", method = RequestMethod.GET)
+    public String getForgetPage() {
+        return "/site/forget";
     }
 
     @RequestMapping(path = "/register", method = RequestMethod.POST)
@@ -155,6 +166,54 @@ public class LoginController implements CommunityConstant {
             return "/site/login";
 
         }
+    }
+
+    @RequestMapping(path = "/forget", method = RequestMethod.POST)
+    public String forget(String email, String newPassword, String verifyCode, Model model) {
+        // 检查验证码
+        String code = null;
+        if (StringUtils.isNotBlank(email)) {
+            String redisKey = RedisKeyUtil.getVerifyCodeKey(email);
+            code = (String) redisTemplate.opsForValue().get(redisKey);
+        }
+
+        if (StringUtils.isBlank(code) || StringUtils.isBlank(verifyCode) || !verifyCode.equalsIgnoreCase(code)) {
+            model.addAttribute("codeMsg", "验证码不正确！");
+            return "/site/forget";
+        }
+
+        Map<String, Object> map = userService.resetPassword(email, newPassword);
+        if (map != null) {
+            return "redirect:/login";
+        } else {
+            model.addAttribute("emailMsg", map.get("emailMsg"));
+            model.addAttribute("passwordMsg", map.get("passwordMsg"));
+            return "/site/forget";
+        }
+
+    }
+
+    // 发送验证码邮件
+    @RequestMapping(path = "/sendCodeEmail", method = RequestMethod.POST)
+    @ResponseBody
+    public String sendVerifyCode(String email) {
+        User user = userService.findUserByEmail(email);
+        if (user == null) {
+            return CommunityUtil.getJSONString(1, "用户不存在！");
+        }
+
+        String verifyCode = CommunityUtil.generateCode();
+        Context context = new Context();
+        context.setVariable("email", email);
+        context.setVariable("code", verifyCode);
+        String content = templateEngine.process("/mail/forget", context);
+        mailClient.sendMail(email, "忘记密码", content);
+
+        // 将验证码存入redis
+        String redisKey = RedisKeyUtil.getVerifyCodeKey(email);
+        redisTemplate.opsForValue().set(redisKey, verifyCode, 60 * 3, TimeUnit.SECONDS);
+
+        return CommunityUtil.getJSONString(0,"我们已向您的邮箱发送了验证码，请注意查收！");
     }
 
     @RequestMapping(path = "/logout", method = RequestMethod.GET)

@@ -15,6 +15,15 @@ public class CommunityUtil {
         return UUID.randomUUID().toString().replaceAll("-", "");
     }
 
+    // 生成4位数验证码
+    public static String generateCode() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 4; i++) {
+            sb.append((int)(Math.random() * 9));
+        }
+        return sb.toString();
+    }
+
     // MD5加密
     public static String md5(String key) {
         if(StringUtils.isBlank(key)) {
@@ -48,5 +57,9 @@ public class CommunityUtil {
         map.put("name", "zhangfei");
         map.put("age", 25);
         System.out.println(getJSONString(0, "ok", map));
+
+        System.out.println(generateCode());
+        System.out.println(generateCode());
+        System.out.println(generateCode());
     }
 }

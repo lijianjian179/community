@@ -59,6 +59,10 @@ public class UserService implements CommunityConstant {
         return userMapper.selectByName(username);
     }
 
+    public User findUserByEmail(String email) {
+        return userMapper.selectByEmail(email);
+    }
+
     public Map<String, Object> register(User user) {
         Map<String, Object> map = new HashMap<>();
         if(user == null) {
@@ -173,7 +177,7 @@ public class UserService implements CommunityConstant {
         return map;
     }
 
-    public Map<String, Object> forgetPassword(String email, String verifyCode, String newPassword) {
+    public Map<String, Object> resetPassword(String email, String newPassword) {
         Map<String, Object> map = new HashMap<>();
 
         // 验证邮箱
@@ -183,7 +187,15 @@ public class UserService implements CommunityConstant {
             return map;
         }
 
+        if (StringUtils.isBlank(newPassword)) {
+            map.put("passwordMsg", "密码不能为空！");
+            return map;
+        }
 
+        // 重置密码
+        String newPsd = CommunityUtil.md5(newPassword + user.getSalt());
+        userMapper.updatePassword(user.getId(), newPsd);
+        clearCache(user.getId());
         return map;
     }
     public void logout(String ticket) {

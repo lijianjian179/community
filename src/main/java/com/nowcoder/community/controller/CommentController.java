@@ -46,17 +46,17 @@ public class CommentController implements CommunityConstant {
                 .setEntityType(comment.getEntityType())
                 .setEntityId(comment.getEntityId())
                 .setData("postId", discussPostId);
-        if (comment.getEntityType() == ENTITY_TYPE_POST) {
+        if (comment.getEntityType() == ENTITY_TYPE_POST) { // 评论某人的帖子
             DiscussPost target = discussPostService.findDiscussPostById(comment.getEntityId());
             event.setEntityUserId(target.getUserId());
-        } else if (comment.getEntityType() == ENTITY_TYPE_COMMENT) {
+        } else if (comment.getEntityType() == ENTITY_TYPE_COMMENT) {// 评论某人的评论
             Comment target = commentService.findCommentById(comment.getEntityId());
             event.setEntityUserId(target.getUserId());
         }
         eventProducer.fireEvent(event);
 
+        // 触发发帖事件，将帖子存入elasticsearch服务器里
         if (comment.getEntityType() == ENTITY_TYPE_POST) {
-            // 触发发帖事件，将帖子存入elasticsearch服务器里
             event = new Event()
                     .setTopic(TOPIC_PUBLISH)
                     .setUserId(hostHolder.getUser().getId())

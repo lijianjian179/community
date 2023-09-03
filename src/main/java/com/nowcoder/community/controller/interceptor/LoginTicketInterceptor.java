@@ -49,14 +49,10 @@ public class LoginTicketInterceptor implements HandlerInterceptor {
                 // 在本次请求中持有用户
                 hostHolder.setUser(user);
                 // 构建用户认证的结果，并存入SecurityContext，以便于Security进行授权
-//                List<GrantedAuthority> list = new ArrayList<>();
-//                list.add(new SimpleGrantedAuthority("user"));
                 Authentication authentication = new UsernamePasswordAuthenticationToken(
                         user, user.getPassword(),userService.getAuthorities(user.getId()));
                 SecurityContextHolder.setContext(new SecurityContextImpl(authentication));
                 securityContextRepository.saveContext(SecurityContextHolder.getContext(), request, response);
-//                System.out.println(authentication.getAuthorities());
-//                SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         }
         return true;

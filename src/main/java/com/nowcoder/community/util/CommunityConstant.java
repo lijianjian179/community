@@ -3,8 +3,7 @@ package com.nowcoder.community.util;
 public interface CommunityConstant {
 
     /**
-     * 激活唱
-     * 成功
+     * 激活成功
      */
     int ACTIVATION_SUCCESS = 0;
 

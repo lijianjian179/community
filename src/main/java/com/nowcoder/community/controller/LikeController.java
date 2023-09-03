@@ -30,7 +30,7 @@ public class LikeController implements CommunityConstant {
 
     @RequestMapping(path = "/like", method = RequestMethod.POST)
     @ResponseBody
-    public String like(int entityType, int entityId, int entityUserId) {
+    public String like(int entityType, int entityId, int entityUserId, int postId) {
         User user = hostHolder.getUser();
 
         // 点赞
@@ -54,7 +54,7 @@ public class LikeController implements CommunityConstant {
                     .setEntityType(entityType)
                     .setEntityId(entityId)
                     .setEntityUserId(entityUserId)
-                    .setData("postId", entityId);
+                    .setData("postId", postId);
             eventProducer.fireEvent(event);
         }
 

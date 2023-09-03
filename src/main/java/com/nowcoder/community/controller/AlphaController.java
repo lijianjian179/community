@@ -19,6 +19,7 @@ public class AlphaController {
 
     @Autowired
     private AlphaService alphaService;
+
     @RequestMapping("/hello")
     @ResponseBody
     public String sayHello() {

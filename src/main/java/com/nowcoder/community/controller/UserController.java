@@ -1,7 +1,10 @@
 package com.nowcoder.community.controller;
 
 import com.nowcoder.community.annotation.LoginRequired;
+import com.nowcoder.community.entity.DiscussPost;
+import com.nowcoder.community.entity.Page;
 import com.nowcoder.community.entity.User;
+import com.nowcoder.community.service.DiscussPostService;
 import com.nowcoder.community.service.FollowService;
 import com.nowcoder.community.service.LikeService;
 import com.nowcoder.community.service.UserService;
@@ -22,7 +25,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Controller
@@ -51,6 +56,9 @@ public class UserController implements CommunityConstant {
 
     @Autowired
     private FollowService followService;
+
+    @Autowired
+    private DiscussPostService discussPostService;
 
     @LoginRequired
     @RequestMapping(path = "/setting", method = RequestMethod.GET)
@@ -168,5 +176,41 @@ public class UserController implements CommunityConstant {
         model.addAttribute("hasFollowed", hasFollowed);
 
         return "/site/profile";
+    }
+
+    @RequestMapping(path = "/post/{userId}", method = RequestMethod.GET)
+    public String getMyPostPage(Model model, Page page, @PathVariable("userId") int userId) {
+        // 设置分页信息
+        page.setLimit(10);
+        page.setPath("/profile/post/" + userId);
+        page.setRows(discussPostService.findDiscussPostRows(userId));
+
+        User user = userService.findUserById(userId);
+        if (user == null) {
+            throw new IllegalArgumentException("用户不存在！");
+        }
+
+        List<DiscussPost> postList = discussPostService.findDiscussPosts(userId, page.getOffset(), page.getLimit(), 0);
+        List<Map<String, Object>> postVoList = new ArrayList<>();
+        if (postList != null ) {
+            for (DiscussPost post : postList) {
+                Map<String, Object> map = new HashMap<>();
+                map.put("post", post);
+                map.put("likeCount", likeService.findEntityLikeCount(ENTITY_TYPE_POST, post.getId()));
+                postVoList.add(map);
+            }
+        }
+
+        model.addAttribute("user", user);
+        model.addAttribute("posts", postVoList);
+        model.addAttribute("postCount", discussPostService.findDiscussPostRows(userId));
+
+        return "/site/my-post";
+    }
+
+    @RequestMapping(path = "/profile/reply/{userId}", method = RequestMethod.GET)
+    public String getMyReplyPage() {
+
+        return "/site/my-reply";
     }
 }

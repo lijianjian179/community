@@ -61,5 +61,7 @@ public class CommunityUtil {
         System.out.println(generateCode());
         System.out.println(generateCode());
         System.out.println(generateCode());
+
+        System.out.println(generateUUID());
     }
 }

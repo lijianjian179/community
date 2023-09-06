@@ -17,6 +17,7 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -33,33 +34,30 @@ public class SecurityConfig implements CommunityConstant {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        AntPathRequestMatcher[] requestMatchers = new AntPathRequestMatcher[] {
+                AntPathRequestMatcher.antMatcher("/user/setting"),
+                AntPathRequestMatcher.antMatcher("/user/upload"),
+                AntPathRequestMatcher.antMatcher("/user/updatePassword"),
+                AntPathRequestMatcher.antMatcher("/discuss/add"),
+                AntPathRequestMatcher.antMatcher("/comment/add/**"),
+                AntPathRequestMatcher.antMatcher("/letter/**"),
+                AntPathRequestMatcher.antMatcher("/notice/**"),
+                AntPathRequestMatcher.antMatcher("/like"),
+                AntPathRequestMatcher.antMatcher("/follow"),
+                AntPathRequestMatcher.antMatcher("/unfollow")};
+        AntPathRequestMatcher[] moderatorRequestMatchers = new AntPathRequestMatcher[] {
+                AntPathRequestMatcher.antMatcher("/discuss/top"),
+                AntPathRequestMatcher.antMatcher("/discuss/wonderful")};
+        AntPathRequestMatcher[] adminRequestMatchers = new AntPathRequestMatcher[] {
+                AntPathRequestMatcher.antMatcher("/discuss/delete"),
+                AntPathRequestMatcher.antMatcher("/data/**"),
+                AntPathRequestMatcher.antMatcher("/actuator/**")};
         http.authorizeHttpRequests((authorize) -> {
             try {
                 authorize
-                        .requestMatchers(
-                                "/user/setting",
-                                "/user/upload",
-                                "/user/updatePassword",
-                                "/discuss/add",
-                                "/comment/add/**",
-                                "/letter/**",
-                                "/notice/**",
-                                "/like",
-                                "/follow",
-                                "/unfollow"
-                        )
-                        .hasAnyAuthority(AUTHORITY_USER,
-                                AUTHORITY_ADMIN,
-                                AUTHORITY_MODERATOR)
-                        .requestMatchers("/discuss/top",
-                                "/discuss/wonderful")
-                        .hasAuthority(
-                                AUTHORITY_MODERATOR)
-                        .requestMatchers("/discuss/delete",
-                                "/data/**",
-                                "/actuator/**")
-                        .hasAuthority(
-                                AUTHORITY_ADMIN)
+                        .requestMatchers(requestMatchers).hasAnyAuthority(AUTHORITY_USER, AUTHORITY_ADMIN, AUTHORITY_MODERATOR)
+                        .requestMatchers(moderatorRequestMatchers).hasAuthority(AUTHORITY_MODERATOR)
+                        .requestMatchers(adminRequestMatchers).hasAuthority(AUTHORITY_ADMIN)
                         .anyRequest().permitAll();
             } catch (Exception e) {
                 throw new RuntimeException(e);
